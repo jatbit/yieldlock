@@ -1,0 +1,366 @@
+<title>YieldLock 적금 보관소</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 상단 바, 어두운 현황 패널(금액과 남은 시간 링), 2열 작업 카드(예치·출금 / 테스트 도구), 하단 거래 내역 */
+:root{
+  --bg:#F2F5F9;--surface:#FFFFFF;--sunk:#EEF2F7;--ink:#0F1B2D;--muted:#5A6B80;--line:#DCE3EC;
+  --accent:#0B7285;--accent-ink:#FFFFFF;--accent-soft:#E2F3F6;
+  --hero-bg:#0F2236;--hero-fg:#EAF1F8;--hero-mute:#9DB1C6;--hero-line:#27425C;--ring:#4FD1C5;
+  --lock:#B7791F;--ok:#1E7A4F;--bad:#B3361F;
+  --font-d:"Space Grotesk","Noto Sans KR",system-ui,sans-serif;--font-b:"Noto Sans KR",system-ui,sans-serif;
+  color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0A1520;--surface:#112131;--sunk:#0D1B28;--ink:#E7EEF5;--muted:#94A6B8;--line:#233649;
+  --accent:#4FD1C5;--accent-ink:#06222A;--accent-soft:#12343B;
+  --hero-bg:#143049;--hero-fg:#EAF1F8;--hero-mute:#9DB1C6;--hero-line:#2D4C69;--ring:#4FD1C5;
+  --lock:#E6B450;--ok:#52C08A;--bad:#F08A73;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1520;--surface:#112131;--sunk:#0D1B28;--ink:#E7EEF5;--muted:#94A6B8;--line:#233649;
+  --accent:#4FD1C5;--accent-ink:#06222A;--accent-soft:#12343B;
+  --hero-bg:#143049;--hero-fg:#EAF1F8;--hero-mute:#9DB1C6;--hero-line:#2D4C69;--ring:#4FD1C5;
+  --lock:#E6B450;--ok:#52C08A;--bad:#F08A73;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.6 var(--font-b);
+  padding-block:0 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:940px;margin:0 auto}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button,input{font:inherit}
+
+/* 상단 바 */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 0}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--hero-bg);display:grid;place-items:center;flex:none}
+.logo svg{width:20px;height:20px}
+.brand h1{font:700 18px/1.2 var(--font-d);margin:0;letter-spacing:-.01em}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--surface);white-space:nowrap}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.pill.on i{background:var(--ok)}
+
+/* 버튼과 입력 */
+button{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;background:var(--accent);color:var(--accent-ink);transition:filter .15s,background .15s}
+button:hover:not(:disabled){filter:brightness(1.07)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.ghost:hover:not(:disabled){background:var(--sunk);filter:none}
+button.block{width:100%}
+button.sm{padding:6px 12px;font-size:13px;border-radius:8px}
+button:disabled{opacity:.45;cursor:not-allowed}
+#connect{padding:8px 14px}
+.field{display:flex;align-items:center;gap:8px;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 14px;margin-bottom:10px}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.field input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);padding:8px 0;outline:0}
+.field input:focus-visible{outline:0}
+.field span{font-size:12px;color:var(--muted);white-space:nowrap}
+input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle;accent-color:var(--accent)}
+label.chk{display:block;font-size:13px;color:var(--muted);margin:12px 0 0}
+.hint{color:var(--muted);font-size:13px;margin:10px 0 0}
+
+/* 진행 단계 */
+.steps{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.steps li{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);min-width:0}
+.steps b{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:var(--sunk);color:var(--muted)}
+.steps li.on{color:var(--ink);border-color:var(--accent);font-weight:700}
+.steps li.on b{background:var(--accent);color:var(--accent-ink)}
+.steps li.done b{background:var(--accent-soft);color:var(--accent)}
+
+/* 현황 패널 */
+.hero{background:var(--hero-bg);color:var(--hero-fg);border-radius:20px;padding:26px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;margin-bottom:16px}
+.hero .lbl{font-size:13px;color:var(--hero-mute)}
+.chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;border-radius:999px;padding:4px 11px;background:rgba(255,255,255,.08);margin-left:8px;vertical-align:middle}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--hero-mute)}
+.chip.lock i{background:var(--lock)}.chip.open i{background:var(--ring)}
+#val{display:block;font:700 40px/1.15 var(--font-d);font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin:6px 0 20px;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--hero-line);border-radius:12px;overflow:hidden}
+.stats div{background:var(--hero-bg);padding:11px 14px;min-width:0}
+.stats span{display:block;font-size:12px;color:var(--hero-mute)}
+.stats b{font-weight:500;font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.dial{position:relative;width:176px;height:176px;flex:none}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial circle{fill:none;stroke-width:9}
+.dial .tr{stroke:var(--hero-line)}
+#ring{stroke:var(--ring);stroke-linecap:round;transition:stroke-dashoffset .8s}
+.dial .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+#count{font:700 38px/1.1 var(--font-d);font-variant-numeric:tabular-nums}
+#count.sm{font-size:20px}
+.dial small{font-size:12px;color:var(--hero-mute);margin-top:4px}
+
+/* 메시지 */
+#msg{font-size:14px;margin:0 0 16px;overflow-wrap:anywhere}
+#msg:not(:empty){padding:12px 14px;border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:10px;background:var(--surface);font-weight:500}
+#msg.ok{border-left-color:var(--ok);color:var(--ok)}#msg.bad{border-left-color:var(--bad);color:var(--bad)}
+#msg a,ul#hist a,#links a{color:var(--accent);font-weight:700}
+
+/* 카드 */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,auto);grid-auto-flow:column;gap:16px;align-items:stretch;margin-bottom:16px}
+.col{display:contents}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;min-width:0}
+.card h2{font:700 16px/1.3 var(--font-d);margin:0 0 4px}
+.card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
+.card .gap{height:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.split>*{min-width:0}
+.split button,#connect{white-space:nowrap}
+.split .field{margin:0}
+ul#hist{list-style:none;margin:0;padding:0}
+ul#hist li{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:10px 0;border-top:1px solid var(--line)}
+ul#hist li:first-child{border-top:0}
+#hist .t{color:var(--muted);font-size:13px;white-space:nowrap}
+details summary{cursor:pointer;font-weight:700;font-size:14px}
+details[open] summary{margin-bottom:12px}
+details input{width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);margin-bottom:10px}
+footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr;grid-template-rows:none;grid-auto-flow:row}
+  .hero{grid-template-columns:1fr;justify-items:stretch;padding:22px 18px}
+  .dial{order:-1;justify-self:center}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  #val{font-size:32px}
+  .tools .pill{display:none}
+  .brand p{display:none}
+  .field{padding-left:12px}
+}
+@media (prefers-reduced-motion:reduce){#ring,button{transition:none}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#4FD1C5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+    <div><h1>YieldLock</h1><p>시간이 지나야 열리는 적금 보관소</p></div>
+  </div>
+  <div class="tools">
+    <span class="pill" id="net"><i></i>Sepolia 테스트넷</span>
+    <button id="connect" class="ghost">지갑 연결</button>
+  </div>
+</header>
+
+<ol class="steps" id="steps">
+  <li><b>1</b>토큰 받기</li><li><b>2</b>예치하기</li><li><b>3</b>락업 대기</li><li><b>4</b>출금하기</li>
+</ol>
+
+<section class="hero" aria-label="내 보관 현황">
+  <div>
+    <div class="lbl">보관 중인 금액 (이자 포함)<span class="chip" id="chip"><i></i><em id="chipT" style="font-style:normal">지갑 연결 전</em></span></div>
+    <b id="val">—</b>
+    <div class="stats">
+      <div><span>내 지분 (vUSDC)</span><b id="shr">—</b></div>
+      <div><span>지분 1개 가치</span><b id="prc">—</b></div>
+      <div><span>만기 시각</span><b id="unl">—</b></div>
+      <div><span>내 지갑 잔액</span><b id="bal">—</b></div>
+    </div>
+  </div>
+  <div class="dial" role="img" aria-label="출금까지 남은 시간">
+    <svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="52"/><circle id="ring" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
+    <div class="mid"><div id="count">—</div><small>출금까지</small></div>
+  </div>
+</section>
+
+<p id="msg" role="status" aria-live="polite"></p>
+
+<div class="grid">
+  <div class="col">
+    <section class="card">
+      <h2>예치하기</h2>
+      <p class="desc">넣은 금액은 정한 시간이 지나야 찾을 수 있습니다.</p>
+      <div class="field"><input id="amt" inputmode="decimal" placeholder="예치할 수량 (예: 100)" aria-label="예치할 수량"><span>mUSDC</span><button id="max" class="ghost sm">최대</button></div>
+      <button id="dep" class="act block">예치하기</button>
+      <label class="chk"><input type="checkbox" id="maxap">승인을 한 번만 하기 (무제한 승인, 테스트 토큰 전용)</label>
+      <p class="hint">처음에는 승인과 예치, 두 번의 확인이 필요합니다. 추가로 예치하면 전체 금액의 락업이 처음부터 다시 시작됩니다.</p>
+    </section>
+
+    <section class="card">
+      <h2>출금하기</h2>
+      <p class="desc" id="outHint">지갑을 연결하면 상태가 표시됩니다.</p>
+      <button id="out" class="act block" disabled>전액 출금하기</button>
+      <div class="gap"></div>
+      <button id="try" class="ghost act block">락업 중 출금 시도해 보기 (수수료 없음)</button>
+      <p class="hint">시도 버튼은 거래를 보내지 않고 결과만 미리 확인합니다. 락업 중에는 막히는 모습을, 만기 후에는 출금이 가능하다는 것을 수수료 없이 보여 줍니다.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>테스트넷 도구</h2>
+      <p class="desc">시연용 가짜 토큰입니다. 예치하기 전에 먼저 받으세요.</p>
+      <button id="mint" class="ghost act block">테스트 토큰 1,000개 받기</button>
+      <div class="gap"></div>
+      <button id="mint2" class="ghost act block">테스트 토큰 1,000,000개 받기</button>
+      <div class="gap"></div>
+      <div class="split"><div class="field"><input id="yamt" inputmode="decimal" placeholder="모의 이자 (예: 50)" aria-label="모의 이자 수량"><span>mUSDC</span></div><button id="inj" class="act">이자 넣기</button></div>
+      <p class="hint">대출 프로토콜에서 들어오는 수익을 가정해 흉내 내는 기능입니다. 넣으면 보관 금액이 늘어나며, 예치자가 있어야 넣을 수 있습니다.</p>
+    </section>
+
+    <section class="card">
+      <h2>락업 시간 (관리자)</h2>
+      <p class="desc" id="durNow">현재 락업 시간: —</p>
+      <div class="chips" id="chips"><button class="ghost sm" data-s="60">1분</button><button class="ghost sm" data-s="180">3분</button><button class="ghost sm" data-s="600">10분</button><button class="ghost sm" data-s="3600">1시간</button></div>
+      <div class="split"><div class="field"><input id="dur" inputmode="numeric" placeholder="초 단위 (최대 2592000)" aria-label="락업 시간(초)"><span>초</span></div><button id="setDur" class="act">변경</button></div>
+      <p class="hint">컨트랙트를 배포한 계정만 바꿀 수 있습니다. 이미 예치한 건에는 적용되지 않고, 변경 후 새로 하는 예치부터 적용됩니다.</p>
+    </section>
+  </div>
+</div>
+
+<section class="card" style="margin-bottom:16px">
+  <h2>최근 거래</h2>
+  <p class="desc">이 브라우저에서 보낸 거래만 기록됩니다. 링크를 누르면 Etherscan에서 수수료를 확인할 수 있습니다.</p>
+  <ul id="hist"></ul>
+</section>
+
+<section class="card">
+  <details id="cfg">
+    <summary>컨트랙트 주소 설정</summary>
+    <input id="aAddr" placeholder="MockUSDC 주소 (0x…)" autocomplete="off" aria-label="MockUSDC 주소">
+    <input id="vAddr" placeholder="YieldLockVault 주소 (0x…)" autocomplete="off" aria-label="YieldLockVault 주소">
+    <button id="save" class="ghost">주소 저장</button>
+    <p class="hint" id="links"></p>
+  </details>
+</section>
+
+<footer>Sepolia 테스트넷 시연용입니다. 실제 자산은 사용되지 않습니다.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script>
+const CFG={asset:"0x9D7f74d0C41E726EC95884E0e97Fa6129e3b5E99",vault:"0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005"}; // Sepolia 배포 주소
+const CHAIN=11155111n;
+const VABI=["function getUserInfo(address) view returns (uint256 shares,uint256 assetsValue,uint256 unlockTime,uint256 remainingSeconds)",
+"function lockDuration() view returns (uint256)","function owner() view returns (address)","function setLockDuration(uint256)","error OwnableUnauthorizedAccount(address account)","error DurationTooLong()","function deposit(uint256,address) returns (uint256)",
+"function redeem(uint256,address,address) returns (uint256)","function injectYield(uint256)",
+"error StillLocked(uint256 unlockTime)","error ERC4626ExceededMaxRedeem(address owner,uint256 shares,uint256 max)",
+"error OnlySelfDeposit()","error ZeroAmount()","error NoDepositors()","error ShareTransferDisabled()"];
+const TABI=["function balanceOf(address) view returns (uint256)","function allowance(address,address) view returns (uint256)",
+"function approve(address,uint256) returns (bool)","function freeMint(address,uint256)"];
+const ERR={StillLocked:"아직 락업 중입니다. 남은 시간이 0이 된 뒤 다시 시도하세요.",
+ERC4626ExceededMaxRedeem:"아직 락업 중이라 출금할 수 없습니다.",OnlySelfDeposit:"본인 주소로만 예치할 수 있습니다.",
+ZeroAmount:"0보다 큰 금액을 입력하세요.",NoDepositors:"예치자가 없을 때는 이자를 넣을 수 없습니다. 먼저 예치하세요.",
+ShareTransferDisabled:"지분은 전송할 수 없습니다.",OwnableUnauthorizedAccount:"배포한 관리자 계정만 바꿀 수 있습니다. MetaMask에서 배포 계정으로 바꿔 연결하세요.",DurationTooLong:"락업 시간은 최대 30일(2592000초)입니다."};
+let provider,signer,me,asset,vault,info=null;
+const $=id=>document.getElementById(id);
+const fmt=v=>{const [a,b=""]=ethers.formatUnits(v,18).split(".");const d=b.slice(0,4).replace(/0+$/,"");
+  return a.replace(/\B(?=(\d{3})+(?!\d))/g,",")+(d?"."+d:"")};
+const hms=s=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60,p=n=>String(n).padStart(2,"0");
+  return h?`${h}:${p(m)}:${p(x)}`:`${m}:${p(x)}`};
+const SCAN="https://sepolia.etherscan.io/";
+function link(href,text){const a=document.createElement("a");a.href=href;a.target="_blank";a.rel="noopener noreferrer";a.textContent=text;return a}
+function say(t,k,hash){const m=$("msg");m.textContent=t;m.className=k||"";if(hash)m.append(" ",link(SCAN+"tx/"+hash,"거래 보기"));if(t)m.scrollIntoView({block:"nearest",behavior:"smooth"})}
+function hist(){try{return JSON.parse(localStorage.getItem("ylh")||"[]")}catch(_){return[]}}
+function addHist(l,h){if(!h)return;try{const a=hist();a.unshift({l,h,t:Date.now()});localStorage.setItem("ylh",JSON.stringify(a.slice(0,10)))}catch(_){}renderHist()}
+function renderHist(){const ul=$("hist");ul.textContent="";const a=hist();
+  if(!a.length){const li=document.createElement("li");li.textContent="아직 거래가 없습니다.";ul.append(li);return}
+  a.forEach(x=>{const li=document.createElement("li"),s=document.createElement("span"),t=document.createElement("span");
+    s.append(x.l+" ",link(SCAN+"tx/"+x.h,x.h.slice(0,10)+"…"));t.className="t";t.textContent=new Date(x.t).toLocaleTimeString("ko-KR");li.append(s,t);ul.append(li)})}
+function why(e){if(e&&(e.code==="ACTION_REJECTED"||e.code===4001))return"MetaMask에서 취소했습니다.";
+  const n=e&&e.revert&&e.revert.name;if(n&&ERR[n])return ERR[n];
+  return(e&&(e.shortMessage||e.message))||"알 수 없는 오류가 발생했습니다."}
+
+async function connect(){
+  if(!window.ethereum){say("MetaMask를 찾지 못했습니다. MetaMask가 설치된 브라우저(또는 MetaMask 앱 안의 브라우저)에서 이 링크를 새 탭으로 여세요.","bad");return}
+  try{
+    provider=new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts",[]);
+    if((await provider.getNetwork()).chainId!==CHAIN){
+      try{await provider.send("wallet_switchEthereumChain",[{chainId:"0xaa36a7"}])}
+      catch(e){say("MetaMask 네트워크를 Sepolia로 바꿔 주세요.","bad");return}
+      provider=new ethers.BrowserProvider(window.ethereum);
+    }
+    signer=await provider.getSigner();me=await signer.getAddress();
+    $("connect").textContent=me.slice(0,6)+"…"+me.slice(-4);
+    $("net").classList.add("on");
+    say("지갑이 연결되었습니다.","ok");setup();
+  }catch(e){say(why(e),"bad")}
+}
+function setup(){
+  const a=$("aAddr").value.trim(),v=$("vAddr").value.trim();
+  if(!signer)return;
+  if(!ethers.isAddress(a)||!ethers.isAddress(v)){$("cfg").open=true;say("컨트랙트 주소를 입력하고 저장하세요.","bad");return}
+  asset=new ethers.Contract(a,TABI,signer);vault=new ethers.Contract(v,VABI,signer);
+  const L=$("links");L.textContent="Etherscan: ";L.append(link(SCAN+"address/"+a,"MockUSDC")," · ",link(SCAN+"address/"+v,"Vault"));
+  try{localStorage.setItem("ylv",JSON.stringify({a,v}))}catch(_){}
+  refresh();
+}
+async function refresh(){
+  if(!vault)return;
+  try{
+    const [i,bal,ld]=await Promise.all([vault.getUserInfo(me),asset.balanceOf(me),vault.lockDuration()]);
+    info={shares:i[0],value:i[1],unlock:Number(i[2]),dur:Number(ld),bal};render();
+  }catch(e){
+    let m="컨트랙트를 읽지 못했습니다. 주소와 네트워크(Sepolia)를 확인하세요.";
+    try{
+      const net=await provider.getNetwork();
+      const ca=await provider.getCode($("aAddr").value.trim()),cv=await provider.getCode($("vAddr").value.trim());
+      m=net.chainId!==CHAIN?"MetaMask가 Sepolia가 아닙니다. 네트워크를 Sepolia로 바꾼 뒤 새로고침하세요."
+       :ca==="0x"?"MockUSDC 주소(첫 번째 칸)에 컨트랙트가 없습니다. Remix VM이 아니라 Sepolia에 배포한 주소인지 확인하세요."
+       :cv==="0x"?"Vault 주소(두 번째 칸)에 컨트랙트가 없습니다. Remix VM이 아니라 Sepolia에 배포한 주소인지 확인하세요."
+       :"두 주소 모두 컨트랙트는 있지만 읽기에 실패했습니다. 두 칸의 주소가 서로 바뀌지 않았는지, Vault가 getUserInfo가 있는 최종본인지 확인하세요.";
+    }catch(_){}
+    say(m,"bad");
+  }
+}
+const CIRC=326.7;
+function render(){
+  if(!info)return;
+  const now=Math.floor(Date.now()/1000),rem=Math.max(0,info.unlock-now),has=info.shares>0n;
+  $("durNow").textContent="현재 락업 시간: "+info.dur+"초"+(info.dur>=60?" (약 "+Math.round(info.dur/6)/10+"분)":"");
+  $("count").textContent=!has?"예치 없음":rem>0?hms(rem):"출금 가능";
+  $("count").className=(!has||rem===0)?"sm":"";
+  const frac=!has||!info.dur?0:Math.min(1,Math.max(0,1-rem/info.dur));
+  $("ring").style.strokeDashoffset=String(CIRC*(1-frac));
+  const chip=$("chip");chip.className="chip"+(!has?"":rem>0?" lock":" open");
+  $("chipT").textContent=!has?"예치 없음":rem>0?"잠금 중":"출금 가능";
+  const st=!has?(info.bal>0n?1:0):rem>0?2:3;
+  document.querySelectorAll("#steps li").forEach((li,i)=>{li.className=i<st?"done":i===st?"on":""});
+  $("val").textContent=fmt(info.value)+" mUSDC";
+  $("shr").textContent=fmt(info.shares)+" vUSDC";
+  $("prc").textContent=has?fmt(info.value*10n**18n/info.shares)+" mUSDC":"—";
+  $("unl").textContent=has?new Date(info.unlock*1000).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—";
+  $("bal").textContent=fmt(info.bal)+" mUSDC";
+  $("out").disabled=pending||!(has&&rem===0);
+  $("outHint").textContent=!has?"예치한 금액이 없습니다.":rem>0?"락업이 끝나면 버튼이 켜집니다.":"지금 전액을 찾을 수 있습니다.";
+}
+setInterval(render,1000);
+
+let pending=false;
+function busy(b){pending=b;document.querySelectorAll("button.act").forEach(x=>x.disabled=b);if(!b)render()}
+async function run(label,fn){
+  if(!signer){say("먼저 맨 위의 '지갑 연결' 버튼을 눌러 MetaMask를 연결하세요.","bad");return}
+  if(!vault){$("cfg").open=true;say("컨트랙트 주소를 입력하고 '주소 저장'을 눌러야 합니다. 맨 아래 '컨트랙트 주소 설정'을 확인하세요.","bad");return}
+  busy(true);
+  try{const r=await fn();say(label+" 완료","ok",r&&r.hash);addHist(label,r&&r.hash)}catch(e){say(why(e),"bad")}
+  busy(false);await refresh();
+}
+async function ensureAllowance(amt){
+  const v=await vault.getAddress();
+  if((await asset.allowance(me,v))<amt){say("승인 중입니다. MetaMask에서 확인하세요.");const rc=await(await asset.approve(v,$("maxap").checked?ethers.MaxUint256:amt)).wait();addHist("승인",rc.hash);say("예치 진행 중입니다. MetaMask에서 한 번 더 확인하세요.")}
+}
+const amtOf=id=>{const a=ethers.parseUnits($(id).value.trim()||"0",18);if(a<=0n)throw{shortMessage:"0보다 큰 수량을 입력하세요."};return a};
+$("connect").onclick=connect;
+$("save").onclick=setup;
+$("dep").onclick=()=>run("예치",async()=>{const a=amtOf("amt");if(info&&a>info.bal)throw{shortMessage:"지갑 잔액보다 많습니다. 테스트 토큰을 먼저 받으세요."};await ensureAllowance(a);say("예치 처리 중…");return await(await vault.deposit(a,me)).wait()});
+$("out").onclick=()=>run("출금",async()=>{say("출금 처리 중…");return await(await vault.redeem(info.shares,me,me)).wait()});
+$("mint").onclick=()=>run("테스트 토큰 받기",async()=>await(await asset.freeMint(me,ethers.parseUnits("1000",18))).wait());
+$("mint2").onclick=()=>run("테스트 토큰 1,000,000개 받기",async()=>await(await asset.freeMint(me,ethers.parseUnits("1000000",18))).wait());
+$("inj").onclick=()=>run("모의 이자 넣기",async()=>{const a=amtOf("yamt");if(info&&a>info.bal)throw{shortMessage:"지갑 잔액보다 많습니다. 테스트 토큰을 먼저 받으세요."};await ensureAllowance(a);return await(await vault.injectYield(a)).wait()});
+$("setDur").onclick=()=>run("락업 시간 변경",async()=>{const s=$("dur").value.trim();if(!/^\d+$/.test(s))throw{shortMessage:"초 단위의 정수를 입력하세요."};if(Number(s)>2592000)throw{shortMessage:"락업 시간은 최대 30일(2592000초)입니다."};say("변경 처리 중…");return await(await vault.setLockDuration(BigInt(s))).wait()});
+$("max").onclick=()=>{if(info)$("amt").value=ethers.formatUnits(info.bal,18)};
+document.querySelectorAll("#chips button").forEach(b=>b.onclick=()=>{$("dur").value=b.dataset.s});
+$("try").onclick=async()=>{
+  if(!signer||!vault||!info){say("먼저 지갑을 연결하세요.","bad");return}
+  if(info.shares===0n){say("예치한 금액이 없습니다. 먼저 예치하세요.","bad");return}
+  busy(true);
+  try{await vault.redeem.staticCall(info.shares,me,me);say("지금은 락업이 끝나서 출금이 가능합니다. (시뮬레이션 성공, 거래는 보내지 않았습니다)","ok")}
+  catch(e){const n=e&&e.revert&&e.revert.name;say(n?"락업이 출금을 막았습니다 ("+n+"). 거래는 전송되지 않아 수수료가 들지 않았습니다.":why(e),n?"ok":"bad")}
+  busy(false);
+};
+
+renderHist();setInterval(()=>{if(vault&&!pending)refresh()},15000);
+if(typeof ethers==="undefined")say("지갑 라이브러리를 불러오지 못했습니다. 페이지를 새로고침하거나 다른 브라우저에서 열어 주세요.","bad");
+let saved={};try{saved=JSON.parse(localStorage.getItem("ylv")||"{}")}catch(_){}
+$("aAddr").value=CFG.asset||saved.a||"";$("vAddr").value=CFG.vault||saved.v||"";
+if(window.ethereum){window.ethereum.on?.("accountsChanged",()=>location.reload());window.ethereum.on?.("chainChanged",()=>location.reload())}
+</script>
