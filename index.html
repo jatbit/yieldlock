@@ -102,6 +102,10 @@ label.chk{display:block;font-size:13px;color:var(--muted);margin:12px 0 0}
 .card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
 .card .gap{height:8px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.ystats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.ystats div{background:var(--sunk);border-radius:12px;padding:12px}
+.ystats span{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.ystats b{font:700 16px var(--font-d);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .split{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .split>*{min-width:0}
 .split button,#connect{white-space:nowrap}
@@ -117,6 +121,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
 
 @media (max-width:760px){
   .grid{grid-template-columns:1fr;grid-template-rows:none;grid-auto-flow:row}
+  .ystats{grid-template-columns:1fr}
   .hero{grid-template-columns:1fr;justify-items:stretch;padding:22px 18px}
   .dial{order:-1;justify-self:center}
   .steps{grid-template-columns:repeat(2,1fr)}
@@ -206,6 +211,16 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
   </div>
 </div>
 
+<section class="card" id="ycard" style="margin-bottom:16px" hidden>
+  <h2>시간에 따른 이자 (시연용)</h2>
+  <p class="desc">이자 보관금에서 시간이 지날수록 지분 가치로 넘어옵니다. 보관 금액이 저절로 늘어납니다.</p>
+  <div class="ystats"><div><span>이자 보관금 잔액</span><b id="rsvV">—</b></div><div><span>아직 반영 전 이자 (전체)</span><b id="pndV">—</b></div><div><span>현재 이율</span><b id="rateV">—</b></div></div>
+  <div class="split"><div class="field"><input id="ramt" inputmode="decimal" placeholder="보관금 채우기 (예: 10000)" aria-label="이자 보관금 수량"><span>mUSDC</span></div><button id="fund" class="act">채우기</button></div>
+  <div class="chips" id="rchips"><button class="ghost sm" data-r="0">이자 끄기</button><button class="ghost sm" data-r="0.01">분당 0.01%</button><button class="ghost sm" data-r="0.1">분당 0.1%</button><button class="ghost sm" data-r="1">분당 1%</button></div>
+  <div class="split"><div class="field"><input id="rate" inputmode="decimal" placeholder="분당 이율 % (예: 0.1)" aria-label="분당 이율(%)"><span>%/분</span></div><button id="setRate" class="act">변경</button></div>
+  <p class="hint">보관금 채우기는 누구나 할 수 있고, 이율 변경은 배포한 계정만 할 수 있습니다. 실제 수익이 아니라 미리 넣어 둔 보관금에서 나가는 모의 이자이며, 보관금이 바닥나면 이자는 멈춥니다.</p>
+</section>
+
 <section class="card" style="margin-bottom:16px">
   <h2>최근 거래</h2>
   <p class="desc">이 브라우저에서 보낸 거래만 기록됩니다. 링크를 누르면 Etherscan에서 수수료를 확인할 수 있습니다.</p>
@@ -227,10 +242,10 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <script>
-const CFG={asset:"0x9D7f74d0C41E726EC95884E0e97Fa6129e3b5E99",vault:"0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005"}; // Sepolia 배포 주소
+const CFG={asset:"0xe4fF1De02FDF621438e4AF6C90496874237457cB",vault:"0x5D2493c476cdA34C816E1b2a1662CC8200d0e39C"}; // Sepolia 배포 주소
 const CHAIN=11155111n;
 const VABI=["function getUserInfo(address) view returns (uint256 shares,uint256 assetsValue,uint256 unlockTime,uint256 remainingSeconds)",
-"function lockDuration() view returns (uint256)","function owner() view returns (address)","function setLockDuration(uint256)","error OwnableUnauthorizedAccount(address account)","error DurationTooLong()","function deposit(uint256,address) returns (uint256)",
+"function lockDuration() view returns (uint256)","function rewardReserve() view returns (uint256)","function ratePerSecond() view returns (uint256)","function pendingYield() view returns (uint256)","function setRatePerSecond(uint256)","function fundReserve(uint256)","error RateTooHigh()","function owner() view returns (address)","function setLockDuration(uint256)","error OwnableUnauthorizedAccount(address account)","error DurationTooLong()","function deposit(uint256,address) returns (uint256)",
 "function redeem(uint256,address,address) returns (uint256)","function injectYield(uint256)",
 "error StillLocked(uint256 unlockTime)","error ERC4626ExceededMaxRedeem(address owner,uint256 shares,uint256 max)",
 "error OnlySelfDeposit()","error ZeroAmount()","error NoDepositors()","error ShareTransferDisabled()"];
@@ -239,7 +254,7 @@ const TABI=["function balanceOf(address) view returns (uint256)","function allow
 const ERR={StillLocked:"아직 락업 중입니다. 남은 시간이 0이 된 뒤 다시 시도하세요.",
 ERC4626ExceededMaxRedeem:"아직 락업 중이라 출금할 수 없습니다.",OnlySelfDeposit:"본인 주소로만 예치할 수 있습니다.",
 ZeroAmount:"0보다 큰 금액을 입력하세요.",NoDepositors:"예치자가 없을 때는 이자를 넣을 수 없습니다. 먼저 예치하세요.",
-ShareTransferDisabled:"지분은 전송할 수 없습니다.",OwnableUnauthorizedAccount:"배포한 관리자 계정만 바꿀 수 있습니다. MetaMask에서 배포 계정으로 바꿔 연결하세요.",DurationTooLong:"락업 시간은 최대 30일(2592000초)입니다."};
+ShareTransferDisabled:"지분은 전송할 수 없습니다.",OwnableUnauthorizedAccount:"배포한 관리자 계정만 바꿀 수 있습니다. MetaMask에서 배포 계정으로 바꿔 연결하세요.",DurationTooLong:"락업 시간은 최대 30일(2592000초)입니다.",RateTooHigh:"이율이 너무 높습니다. 상한은 분당 약 6%입니다."};
 let provider,signer,me,asset,vault,info=null;
 const $=id=>document.getElementById(id);
 const fmt=v=>{const [a,b=""]=ethers.formatUnits(v,18).split(".");const d=b.slice(0,4).replace(/0+$/,"");
@@ -287,8 +302,9 @@ function setup(){
 async function refresh(){
   if(!vault)return;
   try{
-    const [i,bal,ld]=await Promise.all([vault.getUserInfo(me),asset.balanceOf(me),vault.lockDuration()]);
-    info={shares:i[0],value:i[1],unlock:Number(i[2]),dur:Number(ld),bal};render();
+    const opt=f=>{try{return Promise.resolve(f()).catch(()=>null)}catch(_){return Promise.resolve(null)}};
+    const [i,bal,ld,rsv,rate,pend]=await Promise.all([vault.getUserInfo(me),asset.balanceOf(me),vault.lockDuration(),opt(()=>vault.rewardReserve()),opt(()=>vault.ratePerSecond()),opt(()=>vault.pendingYield())]);
+    info={shares:i[0],value:i[1],unlock:Number(i[2]),dur:Number(ld),bal,rsv,rate,pend};render();
   }catch(e){
     let m="컨트랙트를 읽지 못했습니다. 주소와 네트워크(Sepolia)를 확인하세요.";
     try{
@@ -320,6 +336,9 @@ function render(){
   $("prc").textContent=has?fmt(info.value*10n**18n/info.shares)+" mUSDC":"—";
   $("unl").textContent=has?new Date(info.unlock*1000).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—";
   $("bal").textContent=fmt(info.bal)+" mUSDC";
+  const yv=info.rsv!=null;$("ycard").hidden=!yv;
+  if(yv){$("rsvV").textContent=fmt(info.rsv)+" mUSDC";$("pndV").textContent=fmt(info.pend||0n)+" mUSDC";
+    const pm=Number(info.rate||0n)/1e18*6000;$("rateV").textContent=!info.rate?"0% (이자 없음)":"분당 "+(pm<0.01?pm.toPrecision(2):Math.round(pm*1000)/1000)+"%"}
   $("out").disabled=pending||!(has&&rem===0);
   $("outHint").textContent=!has?"예치한 금액이 없습니다.":rem>0?"락업이 끝나면 버튼이 켜집니다.":"지금 전액을 찾을 수 있습니다.";
 }
@@ -334,9 +353,9 @@ async function run(label,fn){
   try{const r=await fn();say(label+" 완료","ok",r&&r.hash);addHist(label,r&&r.hash)}catch(e){say(why(e),"bad")}
   busy(false);await refresh();
 }
-async function ensureAllowance(amt){
+async function ensureAllowance(amt,nm="예치 진행 중입니다. MetaMask에서 한 번 더 확인하세요."){
   const v=await vault.getAddress();
-  if((await asset.allowance(me,v))<amt){say("승인 중입니다. MetaMask에서 확인하세요.");const rc=await(await asset.approve(v,$("maxap").checked?ethers.MaxUint256:amt)).wait();addHist("승인",rc.hash);say("예치 진행 중입니다. MetaMask에서 한 번 더 확인하세요.")}
+  if((await asset.allowance(me,v))<amt){say("승인 중입니다. MetaMask에서 확인하세요.");const rc=await(await asset.approve(v,$("maxap").checked?ethers.MaxUint256:amt)).wait();addHist("승인",rc.hash);say(nm)}
 }
 const amtOf=id=>{const a=ethers.parseUnits($(id).value.trim()||"0",18);if(a<=0n)throw{shortMessage:"0보다 큰 수량을 입력하세요."};return a};
 $("connect").onclick=connect;
@@ -349,6 +368,9 @@ $("inj").onclick=()=>run("모의 이자 넣기",async()=>{const a=amtOf("yamt");
 $("setDur").onclick=()=>run("락업 시간 변경",async()=>{const s=$("dur").value.trim();if(!/^\d+$/.test(s))throw{shortMessage:"초 단위의 정수를 입력하세요."};if(Number(s)>2592000)throw{shortMessage:"락업 시간은 최대 30일(2592000초)입니다."};say("변경 처리 중…");return await(await vault.setLockDuration(BigInt(s))).wait()});
 $("max").onclick=()=>{if(info)$("amt").value=ethers.formatUnits(info.bal,18)};
 document.querySelectorAll("#chips button").forEach(b=>b.onclick=()=>{$("dur").value=b.dataset.s});
+document.querySelectorAll("#rchips button").forEach(b=>b.onclick=()=>{$("rate").value=b.dataset.r});
+$("fund").onclick=()=>run("이자 보관금 채우기",async()=>{const a=amtOf("ramt");if(info&&a>info.bal)throw{shortMessage:"지갑 잔액보다 많습니다. 테스트 토큰을 먼저 받으세요."};await ensureAllowance(a,"보관금을 채우는 중입니다. MetaMask에서 한 번 더 확인하세요.");return await(await vault.fundReserve(a)).wait()});
+$("setRate").onclick=()=>run("이율 변경",async()=>{const s=$("rate").value.trim();if(!/^\d+(\.\d+)?$/.test(s))throw{shortMessage:"분당 이율(%)을 숫자로 입력하세요. 예: 0.1"};const r=ethers.parseUnits(s,18)/6000n;say("변경 처리 중…");return await(await vault.setRatePerSecond(r)).wait()});
 $("try").onclick=async()=>{
   if(!signer||!vault||!info){say("먼저 지갑을 연결하세요.","bad");return}
   if(info.shares===0n){say("예치한 금액이 없습니다. 먼저 예치하세요.","bad");return}
@@ -358,7 +380,7 @@ $("try").onclick=async()=>{
   busy(false);
 };
 
-renderHist();setInterval(()=>{if(vault&&!pending)refresh()},15000);
+renderHist();setInterval(()=>{if(vault&&!pending)refresh()},5000);
 if(typeof ethers==="undefined")say("지갑 라이브러리를 불러오지 못했습니다. 페이지를 새로고침하거나 다른 브라우저에서 열어 주세요.","bad");
 let saved={};try{saved=JSON.parse(localStorage.getItem("ylv")||"{}")}catch(_){}
 $("aAddr").value=CFG.asset||saved.a||"";$("vAddr").value=CFG.vault||saved.v||"";
