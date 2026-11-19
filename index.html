@@ -439,7 +439,7 @@ function renderEst(){
   if(r==null){["estTot","estInt","estRate"].forEach(k=>$(k).textContent="—");$("estYr").textContent="";$("estNote").hidden=false;$("estNote").textContent="이율은 숫자로 입력하세요. 예: 0.1";w.hidden=true;return}
   const pm=Number(r)/1e18*6000;
   $("estRate").textContent=r===0n?"0% (이자 없음)":"분당 "+pctTxt(pm)+"%";
-  $("estYr").textContent=(r===0n?"":"연 환산 "+Math.round(pm*525600).toLocaleString("ko-KR")+"% · ")+"우대 이율 없음";
+  $("estYr").textContent="우대 이율 없음";
   if(!info)note.push("지갑을 연결하면 컨트랙트의 실제 이율과 락업 시간으로 바뀝니다. 지금은 예시 값입니다.");
   else{if(t!==info.dur)note.push("실제 락업은 지금 설정 "+durTxt(info.dur)+"입니다. 다른 기간은 계산만 해 봅니다.");
     if(info.rate!=null&&r!==info.rate)note.push("가정 이율로 계산했습니다. 컨트랙트 이율은 분당 "+rateToPct(info.rate)+"%입니다.")}
