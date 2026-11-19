@@ -55,6 +55,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .field input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);padding:8px 0;outline:0}
 .field input:focus-visible{outline:0}
 .field span{font-size:12px;color:var(--muted);white-space:nowrap}
+.est{background:var(--sunk);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 12px}
+.est h3{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.est .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.est .row+.row{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.est .k{font-size:14px}
+.est .k small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.est .v{text-align:right;font:700 17px var(--font-d);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.est .v.big{font-size:24px;color:var(--accent)}
+.est .v small{display:block;font:400 11px var(--font-b);color:var(--muted);margin-top:2px}
+.est .hint{margin:12px 0 0;font-size:12px}
+.est h3{font:700 16px/1.3 var(--font-d);color:var(--ink)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--bg);margin:0 0 14px}
+.seg button{background:transparent;color:var(--muted);font-weight:500;padding:9px 6px;border-radius:9px;font-size:14px}
+.seg button:hover:not(:disabled){filter:none;color:var(--ink)}
+.seg button.on{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(15,27,45,.12)}
+.est .panel{background:var(--surface);border-radius:12px;padding:14px 16px}
+.sent{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin-top:14px;font-size:15px}
+.sent select,.sent input{font:700 17px var(--font-d);color:var(--accent);background:transparent;border:0;border-bottom:2px solid var(--ink);border-radius:0;padding:2px 2px;font-variant-numeric:tabular-nums}
+.sent input{width:5.5em;min-width:0}
+.sent select{cursor:pointer;max-width:100%}
+.sent select:focus-visible,.sent input:focus-visible{outline:0;border-bottom-color:var(--accent)}
+.sent .sm{margin-left:auto}
+[hidden]{display:none!important}
+.sent select{width:auto}
 input[type=checkbox]{width:auto;margin:0 8px 0 0;vertical-align:middle;accent-color:var(--accent)}
 label.chk{display:block;font-size:13px;color:var(--muted);margin:12px 0 0}
 .hint{color:var(--muted);font-size:13px;margin:10px 0 0}
@@ -174,6 +198,31 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
       <h2>예치하기</h2>
       <p class="desc">넣은 금액은 정한 시간이 지나야 찾을 수 있습니다.</p>
       <div class="field"><input id="amt" inputmode="decimal" placeholder="예치할 수량 (예: 100)" aria-label="예치할 수량"><span>mUSDC</span><button id="max" class="ghost sm">최대</button></div>
+      <div class="est" id="est">
+        <h3>나의 예상 혜택</h3>
+        <div class="seg" role="tablist" aria-label="계산 방식">
+          <button type="button" role="tab" id="modeSave" class="on" aria-selected="true">얼마를 모을까</button>
+          <button type="button" role="tab" id="modeNeed" aria-selected="false">얼마를 넣을까</button>
+        </div>
+        <div class="panel">
+          <div class="row"><div class="k" id="estTotK">만기 금액<small>세전</small></div><div class="v big" id="estTot">—</div></div>
+          <div class="row"><div class="k">예상 이자<small id="estDur">—</small></div><div class="v" id="estInt">—</div></div>
+          <div class="row"><div class="k">적용 이율<small>기본 / 우대 이율</small></div><div class="v"><span id="estRate">—</span><small id="estYr"></small></div></div>
+        </div>
+        <div class="sent">
+          <select id="estPer" aria-label="맡길 기간">
+            <option value="cur" disabled>지금 설정</option><option value="60">1분</option><option value="180">3분</option><option value="420" selected>7분</option><option value="600">10분</option><option value="3600">1시간</option><option value="86400">1일</option><option value="2592000">30일</option>
+          </select><span>동안</span>
+        </div>
+        <div class="sent">
+          <span>분당</span><input id="estPct" inputmode="decimal" value="0.1" placeholder="0.1" aria-label="분당 이율(%)"><span>% 이율로</span>
+        </div>
+        <div class="sent" id="saveRow"><span>위에 입력한 금액을 맡기면</span></div>
+        <div class="sent" id="needRow" hidden><span>만기에</span><input id="estTarget" inputmode="decimal" placeholder="1,100" aria-label="받고 싶은 만기 금액"><span>mUSDC 받으려면</span><button id="useNeed" class="ghost sm" type="button">이 금액 넣기</button></div>
+        <p class="hint" id="estNote" hidden></p>
+        <p class="hint" id="estWarn" hidden></p>
+        <p class="hint">한 번에 맡기는 방식(거치식)의 단리 예상값입니다. 매월 나눠 넣는 적금 방식은 지원하지 않고, 추가로 넣으면 전체 금액의 락업이 다시 시작됩니다. 이율 칸을 비우면 컨트랙트 이율로 돌아갑니다.</p>
+      </div>
       <button id="dep" class="act block">예치하기</button>
       <label class="chk"><input type="checkbox" id="maxap">승인을 한 번만 하기 (무제한 승인, 테스트 토큰 전용)</label>
       <p class="hint">처음에는 승인과 예치, 두 번의 확인이 필요합니다. 추가로 예치하면 전체 금액의 락업이 처음부터 다시 시작됩니다.</p>
@@ -245,7 +294,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin-top:24px}
 const CFG={asset:"0xe4fF1De02FDF621438e4AF6C90496874237457cB",vault:"0x5D2493c476cdA34C816E1b2a1662CC8200d0e39C"}; // Sepolia 배포 주소
 const CHAIN=11155111n;
 const VABI=["function getUserInfo(address) view returns (uint256 shares,uint256 assetsValue,uint256 unlockTime,uint256 remainingSeconds)",
-"function lockDuration() view returns (uint256)","function rewardReserve() view returns (uint256)","function ratePerSecond() view returns (uint256)","function pendingYield() view returns (uint256)","function setRatePerSecond(uint256)","function fundReserve(uint256)","error RateTooHigh()","function owner() view returns (address)","function setLockDuration(uint256)","error OwnableUnauthorizedAccount(address account)","error DurationTooLong()","function deposit(uint256,address) returns (uint256)",
+"function lockDuration() view returns (uint256)","function totalAssets() view returns (uint256)","function rewardReserve() view returns (uint256)","function ratePerSecond() view returns (uint256)","function pendingYield() view returns (uint256)","function setRatePerSecond(uint256)","function fundReserve(uint256)","error RateTooHigh()","function owner() view returns (address)","function setLockDuration(uint256)","error OwnableUnauthorizedAccount(address account)","error DurationTooLong()","function deposit(uint256,address) returns (uint256)",
 "function redeem(uint256,address,address) returns (uint256)","function injectYield(uint256)",
 "error StillLocked(uint256 unlockTime)","error ERC4626ExceededMaxRedeem(address owner,uint256 shares,uint256 max)",
 "error OnlySelfDeposit()","error ZeroAmount()","error NoDepositors()","error ShareTransferDisabled()"];
@@ -303,8 +352,8 @@ async function refresh(){
   if(!vault)return;
   try{
     const opt=f=>{try{return Promise.resolve(f()).catch(()=>null)}catch(_){return Promise.resolve(null)}};
-    const [i,bal,ld,rsv,rate,pend]=await Promise.all([vault.getUserInfo(me),asset.balanceOf(me),vault.lockDuration(),opt(()=>vault.rewardReserve()),opt(()=>vault.ratePerSecond()),opt(()=>vault.pendingYield())]);
-    info={shares:i[0],value:i[1],unlock:Number(i[2]),dur:Number(ld),bal,rsv,rate,pend};render();
+    const [i,bal,ld,rsv,rate,pend,ta]=await Promise.all([vault.getUserInfo(me),asset.balanceOf(me),vault.lockDuration(),opt(()=>vault.rewardReserve()),opt(()=>vault.ratePerSecond()),opt(()=>vault.pendingYield()),opt(()=>vault.totalAssets())]);
+    info={shares:i[0],value:i[1],unlock:Number(i[2]),dur:Number(ld),bal,rsv,rate,pend,ta};render();syncEst();renderEst();
   }catch(e){
     let m="컨트랙트를 읽지 못했습니다. 주소와 네트워크(Sepolia)를 확인하세요.";
     try{
@@ -366,7 +415,54 @@ $("mint").onclick=()=>run("테스트 토큰 받기",async()=>await(await asset.f
 $("mint2").onclick=()=>run("테스트 토큰 1,000,000개 받기",async()=>await(await asset.freeMint(me,ethers.parseUnits("1000000",18))).wait());
 $("inj").onclick=()=>run("모의 이자 넣기",async()=>{const a=amtOf("yamt");if(info&&a>info.bal)throw{shortMessage:"지갑 잔액보다 많습니다. 테스트 토큰을 먼저 받으세요."};await ensureAllowance(a);return await(await vault.injectYield(a)).wait()});
 $("setDur").onclick=()=>run("락업 시간 변경",async()=>{const s=$("dur").value.trim();if(!/^\d+$/.test(s))throw{shortMessage:"초 단위의 정수를 입력하세요."};if(Number(s)>2592000)throw{shortMessage:"락업 시간은 최대 30일(2592000초)입니다."};say("변경 처리 중…");return await(await vault.setLockDuration(BigInt(s))).wait()});
-$("max").onclick=()=>{if(info)$("amt").value=ethers.formatUnits(info.bal,18)};
+function pctTxt(p){return p<0.01?p.toPrecision(2):String(Math.round(p*1000)/1000)}
+function fmtN(v,n){const [a,b=""]=ethers.formatUnits(v+5n*10n**BigInt(17-n),18).split(".");const d=b.slice(0,n).replace(/0+$/,"");return a.replace(/\B(?=(\d{3})+(?!\d))/g,",")+(d?"."+d:"")}
+let estMode="save",perTouched=false,lastChainPct="0.1",needAmt=0n;
+function durTxt(t){return t<60?t+"초":t%86400===0?t/86400+"일":t%3600===0?t/3600+"시간":t%60===0?t/60+"분":t+"초 (약 "+Math.round(t/6)/10+"분)"}
+function rateToPct(r){const p=Number(r)/1e18*6000;return r===0n?"0":pctTxt(p)}
+function estRate(){const v=$("estPct").value.trim();if(v==="")return info&&info.rate!=null?info.rate:null;if(!/^\d+(\.\d+)?$/.test(v))return null;return ethers.parseUnits(v,18)/6000n}
+function estPer(){const v=$("estPer").value;return v==="cur"?(info?info.dur:420):Number(v)}
+function setMode(m){estMode=m;$("modeSave").classList.toggle("on",m==="save");$("modeNeed").classList.toggle("on",m==="need");
+  $("modeSave").setAttribute("aria-selected",m==="save");$("modeNeed").setAttribute("aria-selected",m==="need");
+  $("saveRow").hidden=m!=="save";$("needRow").hidden=m!=="need";renderEst()}
+function syncEst(){ // 체인 값이 새로 읽힐 때만 호출: 사용자가 바꾸지 않은 칸만 실제 값으로 맞춘다
+  if(!info)return;
+  const o=$("estPer").querySelector('option[value="cur"]');o.disabled=false;o.textContent="지금 설정 ("+durTxt(info.dur)+")";if(!perTouched)$("estPer").value="cur";
+  if(info.rate!=null){const cp=rateToPct(info.rate),cur=$("estPct").value.trim();if(cur===""||cur===lastChainPct)$("estPct").value=cp;lastChainPct=cp}
+}
+function renderEst(){
+  if(typeof ethers==="undefined")return;
+  const r=estRate(),t=estPer(),T=BigInt(t),E=10n**18n,w=$("estWarn"),note=[];
+  $("estDur").textContent=durTxt(t)+" 동안 맡길 때";
+  $("estTotK").firstChild.textContent=estMode==="save"?"만기 금액":"필요한 예치 금액";
+  if(r==null){["estTot","estInt","estRate"].forEach(k=>$(k).textContent="—");$("estYr").textContent="";$("estNote").hidden=false;$("estNote").textContent="이율은 숫자로 입력하세요. 예: 0.1";w.hidden=true;return}
+  const pm=Number(r)/1e18*6000;
+  $("estRate").textContent=r===0n?"0% (이자 없음)":"분당 "+pctTxt(pm)+"%";
+  $("estYr").textContent=(r===0n?"":"연 환산 "+Math.round(pm*525600).toLocaleString("ko-KR")+"% · ")+"우대 이율 없음";
+  if(!info)note.push("지갑을 연결하면 컨트랙트의 실제 이율과 락업 시간으로 바뀝니다. 지금은 예시 값입니다.");
+  else{if(t!==info.dur)note.push("실제 락업은 지금 설정 "+durTxt(info.dur)+"입니다. 다른 기간은 계산만 해 봅니다.");
+    if(info.rate!=null&&r!==info.rate)note.push("가정 이율로 계산했습니다. 컨트랙트 이율은 분당 "+rateToPct(info.rate)+"%입니다.")}
+  $("estNote").hidden=!note.length;$("estNote").textContent=note.join(" ");
+  let a=0n;
+  if(estMode==="save"){try{a=ethers.parseUnits($("amt").value.trim()||"0",18)}catch(_){}
+    if(a<=0n){$("estTot").textContent="—";$("estInt").textContent="—";w.hidden=true;return}
+    const it=a*r*T/E;
+    $("estInt").textContent=(it===0n?"0":it<10n**12n?"< 0.000001":fmtN(it,6))+" mUSDC";
+    $("estTot").textContent=fmtN(a+it,6)+" mUSDC";
+  }else{let G=0n;try{G=ethers.parseUnits($("estTarget").value.replace(/,/g,"").trim()||"0",18)}catch(_){}
+    if(G<=0n){$("estTot").textContent="—";$("estInt").textContent="—";needAmt=0n;w.hidden=true;return}
+    const den=E+r*T;a=(G*E+den-1n)/den;needAmt=a;
+    $("estTot").textContent=fmtN(a,6)+" mUSDC";$("estInt").textContent=fmtN(G-a,6)+" mUSDC";
+  }
+  if(info&&info.rsv!=null&&info.ta!=null&&info.rsv<(info.ta+a)*r*T/E){w.hidden=false;w.textContent="이자 보관금이 부족해 실제 이자는 예상보다 적을 수 있습니다."}else w.hidden=true;
+}
+$("amt").addEventListener("input",renderEst);
+$("estPer").addEventListener("change",()=>{perTouched=true;renderEst()});
+$("estPct").addEventListener("input",renderEst);
+$("estTarget").addEventListener("input",renderEst);
+$("modeSave").onclick=()=>setMode("save");$("modeNeed").onclick=()=>setMode("need");
+$("useNeed").onclick=()=>{if(needAmt<=0n)return;const m=10n**12n,q=(needAmt+m/2n)/m*m;$("amt").value=ethers.formatUnits(q,18);setMode("save")};
+$("max").onclick=()=>{if(info){$("amt").value=ethers.formatUnits(info.bal,18);renderEst()}};
 document.querySelectorAll("#chips button").forEach(b=>b.onclick=()=>{$("dur").value=b.dataset.s});
 document.querySelectorAll("#rchips button").forEach(b=>b.onclick=()=>{$("rate").value=b.dataset.r});
 $("fund").onclick=()=>run("이자 보관금 채우기",async()=>{const a=amtOf("ramt");if(info&&a>info.bal)throw{shortMessage:"지갑 잔액보다 많습니다. 테스트 토큰을 먼저 받으세요."};await ensureAllowance(a,"보관금을 채우는 중입니다. MetaMask에서 한 번 더 확인하세요.");return await(await vault.fundReserve(a)).wait()});
@@ -381,6 +477,7 @@ $("try").onclick=async()=>{
 };
 
 renderHist();setInterval(()=>{if(vault&&!pending)refresh()},5000);
+renderEst();
 if(typeof ethers==="undefined")say("지갑 라이브러리를 불러오지 못했습니다. 페이지를 새로고침하거나 다른 브라우저에서 열어 주세요.","bad");
 let saved={};try{saved=JSON.parse(localStorage.getItem("ylv")||"{}")}catch(_){}
 $("aAddr").value=CFG.asset||saved.a||"";$("vAddr").value=CFG.vault||saved.v||"";
